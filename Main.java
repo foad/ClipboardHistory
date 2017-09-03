@@ -1,5 +1,10 @@
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Calendar;
+import java.util.Date;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
@@ -25,10 +30,16 @@ import javax.swing.JDialog;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.File;
+import java.io.IOException;
+
 public class Main {
     
     private final int HISTORY_SIZE = 10;
     private final int ITEM_LENGTH = 60;
+    private String DIR = "";
     
     private ArrayList<String> history = new ArrayList<String>();
     
@@ -40,8 +51,12 @@ public class Main {
     
     private ClipboardListener clip;
     
+    private BufferedWriter bw;
+    private File file;
+    
     public Main() {
         
+        initFileSystem();
         initSystemTray();
         
         clip = new ClipboardListener() {
@@ -50,6 +65,26 @@ public class Main {
                 updated(str);
             }
         };
+    }
+    
+    public void initFileSystem() {
+        Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+        
+        String home = System.getProperty("user.home");
+        DIR = home + "/clipboardhistory/" + year + "-" + (month+1);
+        try {
+            new File(DIR).mkdirs();
+            file = new File(DIR + "/" + day + ".txt");
+            if (!file.exists() && !file.isDirectory())
+                file.createNewFile();
+            
+            bw = new BufferedWriter(new FileWriter(file, true));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     public void initSystemTray() {
@@ -136,25 +171,59 @@ public class Main {
         int index = (history.size() < HISTORY_SIZE) ? 0 : (history.size() - HISTORY_SIZE) ;
         for (int i = index; i < history.size(); i++) {
             String text = history.get(i);
+            
             JMenuItem item = new JMenuItem();
             item.setFont(itemFont);
             item.setBackground(Color.WHITE);
+            
             item.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     clip.setContents(text);
                 }
             });
+            
             if (text.length() > ITEM_LENGTH)
                 item.setText(text.substring(0, ITEM_LENGTH) + "...");
             else
                 item.setText(text);
+            
             popup.add(item);
         }
+        
+        writeToFile(str);
+    }
+    
+    public void writeToFile(String str) {
+        Thread writerThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                synchronized(bw) {
+                    System.out.println("here bois");
+                    DateFormat df = new SimpleDateFormat("HH:mm:ss");
+                    Date currentTime = new Date();
+                    try {
+                        bw.write(df.format(currentTime) + "\t" + str + "\r\n");
+                    } catch (IOException ioe) { ioe.printStackTrace(); }
+                }
+            }
+        });
+        writerThread.start();
+    }
+    
+    public void close() {
+        System.out.println("shuting down");
+        try { bw.close(); } catch (Exception e) { }
     }
     
     public static void main(String[] args) {
-        new Main();
+        Main main = new Main();
+        
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                main.close();
+            }
+        });
     }
     
 }
