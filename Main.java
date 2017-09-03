@@ -249,6 +249,19 @@ public class Main {
             popup.add(item);
         }
         
+        // Close button
+        JMenuItem close = new JMenuItem("CLOSE");
+        close.setFont(itemFont);
+        close.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                System.exit(0);
+            }
+        });
+        
+        popup.add(popupSeparator);
+        popup.add(close);
+        
         // Write update to file
         writeToFile(str);
     }
