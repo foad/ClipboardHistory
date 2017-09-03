@@ -73,7 +73,12 @@ public class ClipboardListener extends Thread implements ClipboardOwner {
         clip.setContents(contents, this); // Set contents again to take ownership
     }
     
+    /** ClipboatListener::setContents
+     * Set contents of clipboard from string
+     * @param String str    String to send to clipboard
+     */
     public void setContents(String str) {
+        // StringSelection implements Transferable, necessary for setContents
         StringSelection selection = new StringSelection(str);
         clip.setContents(selection, this);
     }
