@@ -2,6 +2,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 
 import java.awt.Toolkit;
 
@@ -70,6 +71,11 @@ public class ClipboardListener extends Thread implements ClipboardOwner {
      */
     public void takeOwnership(Transferable contents) {
         clip.setContents(contents, this); // Set contents again to take ownership
+    }
+    
+    public void setContents(String str) {
+        StringSelection selection = new StringSelection(str);
+        clip.setContents(selection, this);
     }
     
     /** ClipboardListener::processClipboard
